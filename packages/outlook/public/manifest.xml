@@ -6,11 +6,11 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Hermes Agent for Outlook" />
   <Description DefaultValue="Hermes Agent task pane for Outlook." />
-  <IconUrl DefaultValue="https://localhost:3445/outlook/icons/icon-64.png" />
-  <HighResolutionIconUrl DefaultValue="https://localhost:3445/outlook/icons/icon-128.png" />
+  <IconUrl DefaultValue="https://localhost:3446/outlook/icons/icon-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3446/outlook/icons/icon-128.png" />
   <SupportUrl DefaultValue="https://github.com/etcircle/Hermes-Agent-Office-Add-In" />
   <AppDomains>
-    <AppDomain>https://localhost:3445</AppDomain>
+    <AppDomain>https://localhost:3446</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox" />
@@ -23,7 +23,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://localhost:3445/outlook/" />
+        <SourceLocation DefaultValue="https://localhost:3446/outlook/" />
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>

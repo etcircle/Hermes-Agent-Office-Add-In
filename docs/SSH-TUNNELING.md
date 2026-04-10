@@ -27,7 +27,7 @@ You usually don't. Running the add-in UI remotely makes Office sideloading and c
 If you insist, you can tunnel the HTTPS bridge too:
 
 ```bash
-ssh -N   -L 3300:127.0.0.1:3300   -L 3445:127.0.0.1:3445   user@your-server
+ssh -N   -L 3300:127.0.0.1:3300   -L 3446:127.0.0.1:3446   user@your-server
 ```
 
 But honestly, keep the UI local unless you enjoy self-inflicted pain.

@@ -6,11 +6,11 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Hermes Agent for Excel"/>
   <Description DefaultValue="Hermes Agent task pane for Excel."/>
-  <IconUrl DefaultValue="https://localhost:3445/excel/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3445/excel/assets/icon-80.png"/>
+  <IconUrl DefaultValue="https://localhost:3446/excel/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:3446/excel/assets/icon-80.png"/>
   <SupportUrl DefaultValue="https://github.com/etcircle/Hermes-Agent-Office-Add-In"/>
   <Hosts><Host Name="Workbook"/></Hosts>
   <Requirements><Sets><Set Name="ExcelApi" MinVersion="1.13"/></Sets></Requirements>
-  <DefaultSettings><SourceLocation DefaultValue="https://localhost:3445/excel/"/></DefaultSettings>
+  <DefaultSettings><SourceLocation DefaultValue="https://localhost:3446/excel/"/></DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
 </OfficeApp>
