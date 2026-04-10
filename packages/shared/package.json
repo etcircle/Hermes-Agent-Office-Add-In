@@ -1,0 +1,7 @@
+{
+  "name": "@hermes-agent-office/shared",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Shared Hermes Agent Office add-in code"
+}

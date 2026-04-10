@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
+  <Id>758f6e9f-5e73-4074-8d79-d6591284130d</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>Hermes Agent</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Hermes Agent for Outlook" />
+  <Description DefaultValue="Hermes Agent task pane for Outlook." />
+  <IconUrl DefaultValue="https://localhost:3445/outlook/icons/icon-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3445/outlook/icons/icon-128.png" />
+  <SupportUrl DefaultValue="https://github.com/etcircle/Hermes-Agent-Office-Add-In" />
+  <AppDomains>
+    <AppDomain>https://localhost:3445</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.8" />
+    </Sets>
+  </Requirements>
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:3445/outlook/" />
+        <RequestedHeight>450</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadWriteMailbox</Permissions>
+</OfficeApp>

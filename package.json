@@ -1,0 +1,17 @@
+{
+  "name": "hermes-agent-office-add-in",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Public Microsoft Office add-ins for Hermes Agent",
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "serve": "node scripts/serve.mjs",
+    "lint": "echo 'lint not bootstrapped yet'",
+    "test": "echo 'tests not bootstrapped yet'"
+  }
+}

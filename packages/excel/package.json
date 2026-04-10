@@ -1,0 +1,7 @@
+{
+  "name": "@hermes-agent-office/excel",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Hermes Agent Excel Office add-in"
+}

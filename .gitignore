@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-*/
+.vite/
+.env
+.DS_Store
+coverage/
+*.log
+pnpm-lock.yaml

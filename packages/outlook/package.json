@@ -1,0 +1,7 @@
+{
+  "name": "@hermes-agent-office/outlook",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Hermes Agent Outlook Office add-in"
+}
