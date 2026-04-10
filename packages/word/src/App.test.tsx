@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BridgeSessionExpiredError,
@@ -200,7 +200,9 @@ describe('Word App shell', () => {
     fireEvent.change(screen.getByLabelText(/message/i), { target: { value: 'Draft a summary' } });
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
 
-    expect(await screen.findByText('Hermes reply')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(screen.getByLabelText(/conversation transcript/i)).getByText('Hermes reply')).toBeInTheDocument();
+    });
     expect(screen.getByRole('button', { name: /insert into document/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /replace selection/i })).toBeDisabled();
   });
@@ -306,13 +308,19 @@ describe('Word App shell', () => {
     expect(await screen.findByText('Selected draft')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /rewrite selection/i }));
-    expect(await screen.findByText('Hermes rewrite')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(screen.getByLabelText(/conversation transcript/i)).getByText('Hermes rewrite')).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /expand selection/i }));
-    expect(await screen.findByText('Hermes expansion')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(screen.getByLabelText(/conversation transcript/i)).getByText('Hermes expansion')).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /summarise selection/i }));
-    expect(await screen.findByText('Hermes summary')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(screen.getByLabelText(/conversation transcript/i)).getByText('Hermes summary')).toBeInTheDocument();
+    });
 
     await waitFor(() => {
       expect(client.chat).toHaveBeenCalledTimes(3);

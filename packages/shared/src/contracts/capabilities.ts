@@ -8,6 +8,13 @@ export interface ChatResponse {
   output?: unknown;
 }
 
+export interface ChatStreamChunk {
+  type: 'delta' | 'done';
+  delta?: string;
+  outputText?: string;
+  raw?: unknown;
+}
+
 export interface BridgeSessionStatus {
   authenticated: boolean;
   expiresAt?: string | null;
@@ -21,4 +28,8 @@ export interface SessionCapability {
 
 export interface ChatCapability {
   chat(input: string): Promise<ChatResponse>;
+}
+
+export interface StreamingChatCapability {
+  streamChat(input: string): AsyncIterable<ChatStreamChunk>;
 }

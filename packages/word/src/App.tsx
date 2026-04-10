@@ -4,11 +4,9 @@ import {
   clearStoredSessionToken,
   getStoredSessionToken,
   hasStoredSessionToken,
-  BridgeSessionExpiredError,
   HermesBackendClient,
   LoginPage,
   OfficeAppShell,
-  type ChatCapability,
   type ChatShellResponseActions,
   type OfficeWorkspaceTab,
   type SessionCapability,
@@ -18,7 +16,10 @@ import { createWordHost, type WordHost } from './word-host';
 import { createWordHostAdapter } from './word-host-adapter';
 import type { WordSelectionQuickAction } from './word-quick-actions';
 
-type AppClient = ChatCapability & SessionCapability;
+type AppClient = SessionCapability & {
+  chat: HermesBackendClient['chat'];
+  streamChat?: HermesBackendClient['streamChat'];
+};
 
 type SelectionState = 'idle' | 'loading' | 'ready' | 'error';
 type AuthBootstrapState = 'checking' | 'ready';
@@ -64,24 +65,11 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     }
   }
 
-  const chatClient = useMemo<ChatCapability>(
-    () => ({
-      chat: async (input: string) => {
-        try {
-          return await client.chat(input);
-        } catch (error) {
-          if (error instanceof BridgeSessionExpiredError) {
-            clearStoredSessionToken();
-            setSessionToken(null);
-            setAuthBootstrapState('ready');
-          }
-
-          throw error;
-        }
-      },
-    }),
-    [client],
-  );
+  const handleSessionExpired = useCallback(() => {
+    clearStoredSessionToken();
+    setSessionToken(null);
+    setAuthBootstrapState('ready');
+  }, []);
 
   const refreshSelection = useCallback(async () => {
     if (!availability.available) {
@@ -204,7 +192,10 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     }
 
     setDocumentMessage('');
-    await generateResponse(action.buildPrompt({ selectionText }));
+    await generateResponse({
+      prompt: action.buildPrompt({ selectionText }),
+      displayInput: `${action.label}\n\n${selectionText}`,
+    });
   }
 
   function renderDocumentActions({ response, loading, generateResponse }: ChatShellResponseActions) {
@@ -304,7 +295,15 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
       {
         id: 'chat',
         label: 'Chat',
-        content: <ChatShell client={chatClient} title="Hermes Agent for Word" renderResponseActions={renderDocumentActions} />,
+        content: (
+          <ChatShell
+            client={client}
+            title="Hermes Agent for Word"
+            sessionStoreNamespace="word"
+            onSessionExpired={handleSessionExpired}
+            renderResponseActions={renderDocumentActions}
+          />
+        ),
       },
       {
         id: 'research',
@@ -331,7 +330,7 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
         ),
       },
     ],
-    [chatClient, renderDocumentActions],
+    [client, handleSessionExpired, renderDocumentActions],
   );
 
   return (
