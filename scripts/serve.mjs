@@ -78,7 +78,8 @@ function writeCors(req, res) {
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Hermes-Session-Id, Idempotency-Key, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'X-Hermes-Session-Id');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
 }
 
@@ -250,7 +251,7 @@ async function proxyApiRequest(req, res, url) {
   for (const [key, value] of Object.entries(req.headers)) {
     if (!value) continue;
     const lower = key.toLowerCase();
-    if (['host', 'content-length', 'connection', 'x-session-token', 'authorization'].includes(lower)) continue;
+    if (['host', 'content-length', 'connection', 'origin', 'x-session-token', 'authorization'].includes(lower)) continue;
     headers.set(key, Array.isArray(value) ? value.join(', ') : value);
   }
 
@@ -273,10 +274,15 @@ async function proxyApiRequest(req, res, url) {
 
     const upstreamBody = Buffer.from(await upstreamRes.arrayBuffer());
     writeCors(req, res);
-    res.writeHead(upstreamRes.status, {
+    const responseHeaders = {
       'Content-Type': upstreamRes.headers.get('content-type') || 'application/octet-stream',
       'Cache-Control': upstreamRes.headers.get('cache-control') || 'no-store',
-    });
+    };
+    const hermesSessionId = upstreamRes.headers.get('x-hermes-session-id');
+    if (hermesSessionId) {
+      responseHeaders['X-Hermes-Session-Id'] = hermesSessionId;
+    }
+    res.writeHead(upstreamRes.status, responseHeaders);
     res.end(upstreamBody);
   } catch (error) {
     sendJson(req, res, 502, {
