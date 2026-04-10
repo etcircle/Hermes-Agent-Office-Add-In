@@ -7,3 +7,28 @@ export function getStoredSessionToken(): string | null {
     return null;
   }
 }
+
+export function setStoredSessionToken(token: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, token);
+  } catch {
+    // ignore localStorage issues in unsupported environments
+  }
+}
+
+export function clearStoredSessionToken(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore localStorage issues in unsupported environments
+  }
+}
+
+export function buildAuthHeaders(init?: HeadersInit): Headers {
+  const headers = new Headers(init);
+  const token = getStoredSessionToken();
+  if (token) {
+    headers.set('X-Session-Token', token);
+  }
+  return headers;
+}

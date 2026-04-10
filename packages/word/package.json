@@ -3,5 +3,12 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
-  "description": "Hermes Agent Word Office add-in"
+  "description": "Hermes Agent Word Office add-in",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hermes-agent-office/shared": "workspace:*"
+  }
 }

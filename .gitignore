@@ -6,6 +6,5 @@ dist-*/
 .DS_Store
 coverage/
 *.log
-pnpm-lock.yaml
 certs/*.crt
 certs/*.key

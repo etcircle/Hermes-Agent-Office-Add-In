@@ -162,7 +162,7 @@ function buildAppHtml(appName) {
     <main>
       <div class="card">
         <h1>Hermes Agent for ${appName}</h1>
-        <p>The Phase 1 bridge is live, but the real ${appName.toLowerCase()} frontend has not been bootstrapped yet.</p>
+        <p>The bridge is live, but this add-in frontend has not been built yet.</p>
         <ul>
           <li>Health: <code>/health</code></li>
           <li>Login: <code>/auth/login</code></li>
@@ -173,6 +173,53 @@ function buildAppHtml(appName) {
     </main>
   </body>
 </html>`;
+}
+
+function getDistDir(appName) {
+  return join(ROOT, 'packages', appName, 'dist');
+}
+
+function getMimeType(filePath) {
+  if (filePath.endsWith('.html')) return 'text/html; charset=utf-8';
+  if (filePath.endsWith('.js')) return 'application/javascript; charset=utf-8';
+  if (filePath.endsWith('.css')) return 'text/css; charset=utf-8';
+  if (filePath.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (filePath.endsWith('.svg')) return 'image/svg+xml';
+  if (filePath.endsWith('.png')) return 'image/png';
+  if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) return 'image/jpeg';
+  if (filePath.endsWith('.webp')) return 'image/webp';
+  if (filePath.endsWith('.ico')) return 'image/x-icon';
+  return 'application/octet-stream';
+}
+
+function tryServeBuiltApp(req, res, appName, pathname) {
+  const distDir = getDistDir(appName);
+  if (!existsSync(distDir)) return false;
+
+  const appBase = `/${appName}`;
+  const relativePath = pathname === appBase || pathname === `${appBase}/`
+    ? '/index.html'
+    : pathname.startsWith(`${appBase}/`)
+      ? pathname.slice(appBase.length)
+      : null;
+
+  if (!relativePath) return false;
+
+  const candidatePath = resolve(distDir, `.${relativePath}`);
+  if (!candidatePath.startsWith(distDir)) {
+    sendJson(req, res, 403, { error: 'Forbidden path' });
+    return true;
+  }
+
+  if (!existsSync(candidatePath)) return false;
+
+  writeCors(req, res);
+  res.writeHead(200, {
+    'Content-Type': getMimeType(candidatePath),
+    'Cache-Control': candidatePath.endsWith('.html') ? 'no-store' : 'public, max-age=3600',
+  });
+  res.end(readFileSync(candidatePath));
+  return true;
 }
 
 async function proxyApiRequest(req, res, url) {
@@ -301,9 +348,15 @@ async function handleRequest(req, res) {
     return sendHtml(req, res, 200, buildAppHtml('Office'));
   }
 
-  const appMatch = url.pathname.match(/^\/(word|powerpoint|excel|outlook)\/?$/);
-  if (appMatch && req.method === 'GET') {
-    return sendHtml(req, res, 200, buildAppHtml(appMatch[1]));
+  const appAssetMatch = url.pathname.match(/^\/(word|powerpoint|excel|outlook)(\/.*)?$/);
+  if (appAssetMatch && req.method === 'GET') {
+    const appName = appAssetMatch[1];
+    if (tryServeBuiltApp(req, res, appName, url.pathname)) {
+      return;
+    }
+    if (url.pathname === `/${appName}` || url.pathname === `/${appName}/`) {
+      return sendHtml(req, res, 200, buildAppHtml(appName));
+    }
   }
 
   return sendJson(req, res, 404, {

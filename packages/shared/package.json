@@ -3,5 +3,17 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
-  "description": "Shared Hermes Agent Office add-in code"
+  "description": "Shared Hermes Agent Office add-in code",
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth.ts",
+    "./backend-client": "./src/backend-client.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
 }
