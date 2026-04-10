@@ -50,7 +50,7 @@ export function ChatShell({ client, title, renderResponseActions }: ChatShellPro
   }
 
   return (
-    <div className="ha-card ha-chat-shell">
+    <div className="ha-chat-shell">
       <div className="ha-eyebrow">Hermes Agent</div>
       <h1>{title}</h1>
       <p className="ha-muted">Ask Hermes to help write, rewrite, or structure what you need.</p>

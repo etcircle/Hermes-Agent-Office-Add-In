@@ -7,8 +7,10 @@ import {
   BridgeSessionExpiredError,
   HermesBackendClient,
   LoginPage,
+  OfficeAppShell,
   type ChatCapability,
   type ChatShellResponseActions,
+  type OfficeWorkspaceTab,
   type SessionCapability,
 } from '@hermes-agent-office/shared';
 import './styles.css';
@@ -297,24 +299,43 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     );
   }
 
+  const workspaces = useMemo<OfficeWorkspaceTab[]>(
+    () => [
+      {
+        id: 'chat',
+        label: 'Chat',
+        content: <ChatShell client={chatClient} title="Hermes Agent for Word" renderResponseActions={renderDocumentActions} />,
+      },
+      {
+        id: 'research',
+        label: 'Research',
+        content: renderPlaceholderWorkspace(
+          'Research workspace',
+          'Research workspace is coming next. This shared tab will handle search, pinned findings, and handoff back into chat.',
+        ),
+      },
+      {
+        id: 'visuals',
+        label: 'Visuals',
+        content: renderPlaceholderWorkspace(
+          'Visuals workspace',
+          'Visuals workspace is coming next. This shared tab will host Mermaid-first diagram generation and refinement.',
+        ),
+      },
+      {
+        id: 'assets',
+        label: 'Assets',
+        content: renderPlaceholderWorkspace(
+          'Assets workspace',
+          'Assets workspace is coming next. This shared tab will hold saved outputs, templates, and reusable building blocks.',
+        ),
+      },
+    ],
+    [chatClient, renderDocumentActions],
+  );
+
   return (
     <div className="ha-app word-app-shell">
-      <div className="word-app-shell__toolbar">
-        <div>
-          <div className="word-app-shell__product">Hermes Agent</div>
-          <div className="word-app-shell__host">Word Add-in</div>
-        </div>
-        {sessionToken ? (
-          <button
-            type="button"
-            className="word-app-shell__logout"
-            onClick={() => void handleLogout()}
-            disabled={loggingOut || authBootstrapState === 'checking'}
-          >
-            {loggingOut ? 'Logging out…' : 'Log out'}
-          </button>
-        ) : null}
-      </div>
       {authBootstrapState === 'checking' ? (
         <div className="ha-card ha-login-card">
           <div className="ha-eyebrow">Hermes Agent</div>
@@ -322,10 +343,26 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
           <p className="ha-muted">Checking whether your saved local Hermes bridge session is still valid.</p>
         </div>
       ) : sessionToken ? (
-        <ChatShell client={chatClient} title="Hermes Agent for Word" renderResponseActions={renderDocumentActions} />
+        <OfficeAppShell
+          productName="Hermes Agent"
+          hostName="Word Add-in"
+          workspaces={workspaces}
+          onLogout={handleLogout}
+          logoutDisabled={loggingOut}
+          logoutLabel={loggingOut ? 'Logging out…' : 'Log out'}
+        />
       ) : (
         <LoginPage client={client} onSuccess={handleLogin} />
       )}
     </div>
+  );
+}
+
+function renderPlaceholderWorkspace(title: string, body: string) {
+  return (
+    <section className="ha-workspace-placeholder" aria-label={title}>
+      <h2 className="ha-workspace-placeholder__title">{title}</h2>
+      <p className="ha-muted ha-workspace-placeholder__body">{body}</p>
+    </section>
   );
 }

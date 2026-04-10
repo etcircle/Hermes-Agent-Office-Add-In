@@ -244,6 +244,43 @@ describe('Word App shell', () => {
     expect(getStoredSessionToken()).toBeNull();
   });
 
+  it('shows the shared workspace tabs and switches to placeholder workspaces', async () => {
+    setStoredSessionToken('session-1');
+
+    const client = {
+      chat: vi.fn(),
+      login: vi.fn(),
+      getBridgeSession: vi.fn().mockResolvedValue({ authenticated: true, expiresAt: '2026-04-11T00:00:00.000Z' }),
+      logout: vi.fn(),
+    };
+
+    render(
+      <App
+        client={client as never}
+        wordHost={{
+          getAvailability: () => ({ available: false, reason: 'Word document actions are only available inside Microsoft Word.' }),
+          getSelectionText: vi.fn(),
+          insertTextAtSelectionOrEnd: vi.fn(),
+          replaceSelection: vi.fn(),
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /chat/i, selected: true })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('tab', { name: /research/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /visuals/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /assets/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /research/i }));
+    expect(screen.getByText(/research workspace is coming next/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /chat/i }));
+    expect(screen.getByRole('heading', { name: /hermes agent for word/i })).toBeInTheDocument();
+  });
+
   it('uses quick actions for the current selection and applies the latest Hermes response to the document', async () => {
     setStoredSessionToken('session-1');
 
