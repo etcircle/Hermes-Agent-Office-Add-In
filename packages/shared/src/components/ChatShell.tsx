@@ -1,10 +1,20 @@
-import { FormEvent, ReactNode, useState } from 'react';
-import type { HermesBackendClient } from '../backend-client';
+import { FormEvent, ReactNode, useCallback, useState } from 'react';
+import type { ChatResponse, HermesBackendClient } from '../backend-client';
+
+export interface ChatShellResponseActions {
+  response: string;
+  loading: boolean;
+  generateResponse: (prompt: string) => Promise<void>;
+}
 
 interface ChatShellProps {
   client: Pick<HermesBackendClient, 'chat'>;
   title: string;
-  renderResponseActions?: (response: string) => ReactNode;
+  renderResponseActions?: (actions: ChatShellResponseActions) => ReactNode;
+}
+
+function getResponseText(result: ChatResponse): string {
+  return result.output_text || JSON.stringify(result.output ?? {}, null, 2);
 }
 
 export function ChatShell({ client, title, renderResponseActions }: ChatShellProps) {
@@ -13,21 +23,30 @@ export function ChatShell({ client, title, renderResponseActions }: ChatShellPro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const generateResponse = useCallback(
+    async (prompt: string) => {
+      if (!prompt.trim() || loading) {
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      try {
+        const result = await client.chat(prompt.trim());
+        setResponse(getResponseText(result));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Chat request failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [client, loading],
+  );
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!message.trim() || loading) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await client.chat(message.trim());
-      setResponse(result.output_text || JSON.stringify(result.output ?? {}, null, 2));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Chat request failed');
-    } finally {
-      setLoading(false);
-    }
+    await generateResponse(message);
   }
 
   return (
@@ -54,7 +73,11 @@ export function ChatShell({ client, title, renderResponseActions }: ChatShellPro
       <div className="ha-response">
         <div className="ha-response-label">Hermes response</div>
         <pre>{response || 'Your response will appear here.'}</pre>
-        {renderResponseActions ? <div className="ha-response-actions">{renderResponseActions(response)}</div> : null}
+        {renderResponseActions ? (
+          <div className="ha-response-actions">
+            {renderResponseActions({ response, loading, generateResponse })}
+          </div>
+        ) : null}
       </div>
     </div>
   );

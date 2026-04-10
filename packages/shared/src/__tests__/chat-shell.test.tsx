@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ChatShell } from '../components/ChatShell';
+import { ChatShell, type ChatShellResponseActions } from '../components/ChatShell';
 
 describe('ChatShell', () => {
   it('sends the prompt and renders the Hermes response', async () => {
@@ -18,5 +18,31 @@ describe('ChatShell', () => {
     });
 
     expect(await screen.findByText('Hello from Hermes')).toBeInTheDocument();
+  });
+
+  it('supports response actions that generate a response programmatically', async () => {
+    const client = {
+      chat: vi.fn().mockResolvedValue({ output_text: 'Expanded selection' }),
+    };
+
+    render(
+      <ChatShell
+        client={client as never}
+        title="Hermes Agent for Word"
+        renderResponseActions={(shell: ChatShellResponseActions) => (
+          <button type="button" onClick={() => void shell.generateResponse('Expand this selection')}>
+            Expand selection
+          </button>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /expand selection/i }));
+
+    await waitFor(() => {
+      expect(client.chat).toHaveBeenCalledWith('Expand this selection');
+    });
+
+    expect(await screen.findByText('Expanded selection')).toBeInTheDocument();
   });
 });

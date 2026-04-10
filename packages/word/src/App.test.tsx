@@ -59,8 +59,11 @@ describe('Word App shell', () => {
       />,
     );
 
-    expect(screen.getByText(/word document actions are only available inside microsoft word/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/word document actions are only available inside microsoft word/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /refresh selection/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /rewrite selection/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /expand selection/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /summarise selection/i })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText(/message/i), { target: { value: 'Draft a summary' } });
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
@@ -70,11 +73,15 @@ describe('Word App shell', () => {
     expect(screen.getByRole('button', { name: /replace selection/i })).toBeDisabled();
   });
 
-  it('loads the current selection and applies the latest Hermes response to the document', async () => {
+  it('uses quick actions for the current selection and applies the latest Hermes response to the document', async () => {
     setStoredSessionToken('session-1');
 
     const client = {
-      chat: vi.fn().mockResolvedValue({ output_text: 'Hermes rewrite' }),
+      chat: vi
+        .fn()
+        .mockResolvedValueOnce({ output_text: 'Hermes rewrite' })
+        .mockResolvedValueOnce({ output_text: 'Hermes expansion' })
+        .mockResolvedValueOnce({ output_text: 'Hermes summary' }),
       login: vi.fn(),
     };
     const wordHost = {
@@ -88,17 +95,63 @@ describe('Word App shell', () => {
 
     expect(await screen.findByText('Selected draft')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/message/i), { target: { value: 'Rewrite this' } });
-    fireEvent.click(screen.getByRole('button', { name: /send/i }));
-
+    fireEvent.click(screen.getByRole('button', { name: /rewrite selection/i }));
     expect(await screen.findByText('Hermes rewrite')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /expand selection/i }));
+    expect(await screen.findByText('Hermes expansion')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /summarise selection/i }));
+    expect(await screen.findByText('Hermes summary')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(client.chat).toHaveBeenCalledTimes(3);
+    });
+
+    expect(client.chat).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('Selected draft'),
+    );
+    expect(client.chat).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('Selected draft'),
+    );
+    expect(client.chat).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('Selected draft'),
+    );
+    expect(client.chat.mock.calls[0]?.[0]).toMatch(/rewrite/i);
+    expect(client.chat.mock.calls[1]?.[0]).toMatch(/expand/i);
+    expect(client.chat.mock.calls[2]?.[0]).toMatch(/summari[sz]e/i);
 
     fireEvent.click(screen.getByRole('button', { name: /insert into document/i }));
     fireEvent.click(screen.getByRole('button', { name: /replace selection/i }));
 
     await waitFor(() => {
-      expect(wordHost.insertTextAtSelectionOrEnd).toHaveBeenCalledWith('Hermes rewrite');
-      expect(wordHost.replaceSelection).toHaveBeenCalledWith('Hermes rewrite');
+      expect(wordHost.insertTextAtSelectionOrEnd).toHaveBeenCalledWith('Hermes summary');
+      expect(wordHost.replaceSelection).toHaveBeenCalledWith('Hermes summary');
     });
+  });
+
+  it('disables selection quick actions when there is no current selection text', async () => {
+    setStoredSessionToken('session-1');
+
+    const client = {
+      chat: vi.fn(),
+      login: vi.fn(),
+    };
+    const wordHost = {
+      getAvailability: () => ({ available: true, reason: '' }),
+      getSelectionText: vi.fn().mockResolvedValue(''),
+      insertTextAtSelectionOrEnd: vi.fn().mockResolvedValue(undefined),
+      replaceSelection: vi.fn().mockResolvedValue(undefined),
+    };
+
+    render(<App client={client as never} wordHost={wordHost} />);
+
+    expect(await screen.findByText(/nothing selected in the document/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /rewrite selection/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /expand selection/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /summarise selection/i })).toBeDisabled();
   });
 });
