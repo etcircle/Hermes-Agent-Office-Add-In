@@ -1,5 +1,5 @@
 import { FormEvent, ReactNode, useCallback, useState } from 'react';
-import type { ChatResponse, HermesBackendClient } from '../backend-client';
+import type { ChatCapability, ChatResponse } from '../contracts/capabilities';
 
 export interface ChatShellResponseActions {
   response: string;
@@ -8,7 +8,7 @@ export interface ChatShellResponseActions {
 }
 
 interface ChatShellProps {
-  client: Pick<HermesBackendClient, 'chat'>;
+  client: ChatCapability;
   title: string;
   renderResponseActions?: (actions: ChatShellResponseActions) => ReactNode;
 }

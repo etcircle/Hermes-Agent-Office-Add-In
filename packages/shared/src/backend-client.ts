@@ -1,20 +1,18 @@
 import { buildAuthHeaders, setStoredSessionToken } from './auth';
+import type {
+  BridgeLoginResult,
+  ChatCapability,
+  ChatResponse,
+  SessionCapability,
+} from './contracts/capabilities';
 
 export interface HermesBackendClientConfig {
   baseUrl?: string;
 }
 
-export interface BridgeLoginResponse {
-  token: string;
-  expiresAt: string;
-}
+export type BridgeLoginResponse = BridgeLoginResult;
 
-export interface ChatResponse {
-  output_text?: string;
-  output?: unknown;
-}
-
-export class HermesBackendClient {
+export class HermesBackendClient implements ChatCapability, SessionCapability {
   constructor(private readonly config: HermesBackendClientConfig = {}) {}
 
   getBaseUrl(): string {

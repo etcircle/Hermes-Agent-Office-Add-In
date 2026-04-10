@@ -1,8 +1,8 @@
 import { FormEvent, useState } from 'react';
-import type { HermesBackendClient } from '../backend-client';
+import type { SessionCapability } from '../contracts/capabilities';
 
 interface LoginPageProps {
-  client: HermesBackendClient;
+  client: Pick<SessionCapability, 'login'>;
   onSuccess: (token: string) => void;
 }
 

@@ -12,7 +12,7 @@
     "dev": "node scripts/serve.mjs",
     "serve": "node scripts/serve.mjs",
     "build": "pnpm --filter @hermes-agent-office/word build",
-    "test": "pnpm --filter @hermes-agent-office/shared test",
+    "test": "pnpm --filter @hermes-agent-office/shared test && pnpm --filter @hermes-agent-office/word test",
     "lint": "echo 'lint not bootstrapped yet'"
   },
   "devDependencies": {

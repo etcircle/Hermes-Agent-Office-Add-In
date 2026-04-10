@@ -5,12 +5,16 @@ import {
   getStoredSessionToken,
   HermesBackendClient,
   LoginPage,
+  type ChatCapability,
   type ChatShellResponseActions,
+  type SessionCapability,
 } from '@hermes-agent-office/shared';
 import './styles.css';
 import { createWordHost, type WordHost } from './word-host';
+import { createWordHostAdapter } from './word-host-adapter';
+import type { WordSelectionQuickAction } from './word-quick-actions';
 
-type AppClient = Pick<HermesBackendClient, 'chat' | 'login'>;
+type AppClient = ChatCapability & Pick<SessionCapability, 'login'>;
 
 type SelectionState = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -19,35 +23,16 @@ interface AppProps {
   wordHost?: WordHost;
 }
 
-interface SelectionQuickAction {
-  label: string;
-  buildPrompt: (selection: string) => string;
-}
-
-const selectionQuickActions: SelectionQuickAction[] = [
-  {
-    label: 'Rewrite selection',
-    buildPrompt: (selection) => `Rewrite the following Word selection so it is clearer, smoother, and professionally polished while preserving the original meaning, tone, and factual details. Return only the rewritten text with no commentary or markdown.\n\nWord selection:\n"""\n${selection}\n"""`,
-  },
-  {
-    label: 'Expand selection',
-    buildPrompt: (selection) => `Expand the following Word selection into a fuller draft with more detail, clarity, and useful context while staying consistent with the original intent and tone. Return only the expanded text with no commentary or markdown.\n\nWord selection:\n"""\n${selection}\n"""`,
-  },
-  {
-    label: 'Summarise selection',
-    buildPrompt: (selection) => `Summarise the following Word selection into a concise, accurate summary that preserves the key points and core intent. Return only the summary text with no commentary or markdown.\n\nWord selection:\n"""\n${selection}\n"""`,
-  },
-];
-
 export function App({ client: providedClient, wordHost: providedWordHost }: AppProps = {}) {
   const defaultClient = useMemo(() => new HermesBackendClient({ baseUrl: window.location.origin }), []);
   const client = providedClient ?? defaultClient;
   const wordHost = useMemo(() => providedWordHost ?? createWordHost(), [providedWordHost]);
+  const wordHostAdapter = useMemo(() => createWordHostAdapter(wordHost), [wordHost]);
   const [sessionToken, setSessionToken] = useState<string | null>(() => getStoredSessionToken());
   const [selectionText, setSelectionText] = useState('');
   const [selectionState, setSelectionState] = useState<SelectionState>('idle');
   const [documentMessage, setDocumentMessage] = useState('');
-  const availability = wordHost.getAvailability();
+  const availability = wordHostAdapter.getAvailability();
   const responseUnavailableReason = availability.reason || 'Word document actions are currently unavailable.';
 
   function handleLogin(token: string) {
@@ -68,14 +53,14 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     setDocumentMessage('');
 
     try {
-      const nextSelection = await wordHost.getSelectionText();
-      setSelectionText(nextSelection);
+      const context = await wordHostAdapter.getContext();
+      setSelectionText(context.selectionText);
       setSelectionState('ready');
     } catch (error) {
       setSelectionState('error');
       setDocumentMessage(error instanceof Error ? error.message : 'Unable to read the current Word selection.');
     }
-  }, [availability.available, wordHost]);
+  }, [availability.available, wordHostAdapter]);
 
   useEffect(() => {
     if (!sessionToken) {
@@ -103,7 +88,7 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     setDocumentMessage('');
 
     try {
-      await wordHost.insertTextAtSelectionOrEnd(response);
+      await wordHostAdapter.applyResponse(response, 'insert-latest-response');
       setDocumentMessage('Inserted the latest Hermes response into the document.');
     } catch (error) {
       setDocumentMessage(error instanceof Error ? error.message : 'Unable to insert the latest Hermes response.');
@@ -118,7 +103,7 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     setDocumentMessage('');
 
     try {
-      await wordHost.replaceSelection(response);
+      await wordHostAdapter.applyResponse(response, 'replace-selection');
       setDocumentMessage('Replaced the current selection with the latest Hermes response.');
       await refreshSelection();
     } catch (error) {
@@ -127,7 +112,7 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
   }
 
   async function handleSelectionQuickAction(
-    action: SelectionQuickAction,
+    action: WordSelectionQuickAction,
     generateResponse: ChatShellResponseActions['generateResponse'],
   ) {
     if (!availability.available || !selectionText.trim()) {
@@ -135,7 +120,7 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     }
 
     setDocumentMessage('');
-    await generateResponse(action.buildPrompt(selectionText));
+    await generateResponse(action.buildPrompt({ selectionText }));
   }
 
   function renderDocumentActions({ response, loading, generateResponse }: ChatShellResponseActions) {
@@ -179,9 +164,9 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
             <div className="ha-muted">{selectionActionHint}</div>
           </div>
           <div className="word-app-shell__document-actions">
-            {selectionQuickActions.map((action) => (
+            {wordHostAdapter.getQuickActions().map((action) => (
               <button
-                key={action.label}
+                key={action.id}
                 type="button"
                 className="word-app-shell__secondary-action"
                 onClick={() => void handleSelectionQuickAction(action, generateResponse)}
