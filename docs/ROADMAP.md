@@ -1,5 +1,7 @@
 # Roadmap
 
+Detailed execution plan: `docs/plans/2026-04-10-office-platform-implementation.md`
+
 ## Phase 0 - Scaffold
 - create clean public repo
 - define env contract

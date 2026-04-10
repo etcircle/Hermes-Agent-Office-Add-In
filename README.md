@@ -28,7 +28,9 @@ See:
 - `docs/ARCHITECTURE.md`
 - `docs/PRODUCT-DECISIONS.md`
 - `docs/SSH-TUNNELING.md`
+- `docs/specs/2026-04-10-office-platform-direction.md`
 - `docs/plans/2026-04-10-phase-1-bridge.md`
+- `docs/plans/2026-04-10-office-platform-implementation.md`
 
 ## Recommended architecture
 
