@@ -115,9 +115,13 @@ async function readJson(req) {
   return JSON.parse(body.toString('utf8'));
 }
 
+function getNextSessionExpiry() {
+  return Date.now() + SESSION_EXPIRY_HOURS * 60 * 60 * 1000;
+}
+
 function issueSession() {
   const token = crypto.randomBytes(24).toString('hex');
-  const expiresAt = Date.now() + SESSION_EXPIRY_HOURS * 60 * 60 * 1000;
+  const expiresAt = getNextSessionExpiry();
   sessions.set(token, { createdAt: Date.now(), expiresAt });
   return { token, expiresAt };
 }
@@ -139,6 +143,8 @@ function getValidSession(req) {
     sessions.delete(token);
     return null;
   }
+  session.expiresAt = getNextSessionExpiry();
+  sessions.set(token, session);
   return { token, ...session };
 }
 
@@ -225,7 +231,14 @@ function tryServeBuiltApp(req, res, appName, pathname) {
 async function proxyApiRequest(req, res, url) {
   const session = getValidSession(req);
   if (!session) {
-    return sendJson(req, res, 401, { error: 'Not authenticated' });
+    writeCors(req, res);
+    res.writeHead(401, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'x-hermes-office-auth': 'bridge-session-expired',
+    });
+    res.end(JSON.stringify({ error: 'Not authenticated' }, null, 2));
+    return;
   }
 
   const upstreamBase = new URL(HERMES_API_BASE_URL);

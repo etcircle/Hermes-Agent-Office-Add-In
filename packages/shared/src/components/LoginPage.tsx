@@ -31,7 +31,7 @@ export function LoginPage({ client, onSuccess }: LoginPageProps) {
   return (
     <div className="ha-card ha-login-card">
       <div className="ha-eyebrow">Hermes Agent</div>
-      <h1>Unlock Word</h1>
+      <h1>Unlock Hermes add-in</h1>
       <p className="ha-muted">Connect this add-in to your local Hermes bridge.</p>
       <form onSubmit={handleSubmit} className="ha-stack">
         <label className="ha-stack">

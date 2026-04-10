@@ -3,6 +3,8 @@ import {
   ChatShell,
   clearStoredSessionToken,
   getStoredSessionToken,
+  hasStoredSessionToken,
+  BridgeSessionExpiredError,
   HermesBackendClient,
   LoginPage,
   type ChatCapability,
@@ -14,9 +16,10 @@ import { createWordHost, type WordHost } from './word-host';
 import { createWordHostAdapter } from './word-host-adapter';
 import type { WordSelectionQuickAction } from './word-quick-actions';
 
-type AppClient = ChatCapability & Pick<SessionCapability, 'login'>;
+type AppClient = ChatCapability & SessionCapability;
 
 type SelectionState = 'idle' | 'loading' | 'ready' | 'error';
+type AuthBootstrapState = 'checking' | 'ready';
 
 interface AppProps {
   client?: AppClient;
@@ -29,6 +32,10 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
   const wordHost = useMemo(() => providedWordHost ?? createWordHost(), [providedWordHost]);
   const wordHostAdapter = useMemo(() => createWordHostAdapter(wordHost), [wordHost]);
   const [sessionToken, setSessionToken] = useState<string | null>(() => getStoredSessionToken());
+  const [authBootstrapState, setAuthBootstrapState] = useState<AuthBootstrapState>(() =>
+    hasStoredSessionToken() ? 'checking' : 'ready',
+  );
+  const [loggingOut, setLoggingOut] = useState(false);
   const [selectionText, setSelectionText] = useState('');
   const [selectionState, setSelectionState] = useState<SelectionState>('idle');
   const [documentMessage, setDocumentMessage] = useState('');
@@ -37,12 +44,42 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
 
   function handleLogin(token: string) {
     setSessionToken(token);
+    setAuthBootstrapState('ready');
   }
 
-  function handleLogout() {
-    clearStoredSessionToken();
-    setSessionToken(null);
+  async function handleLogout() {
+    setLoggingOut(true);
+
+    try {
+      await client.logout();
+    } catch {
+      // local logout should still win even if the bridge is temporarily unreachable
+    } finally {
+      clearStoredSessionToken();
+      setSessionToken(null);
+      setAuthBootstrapState('ready');
+      setLoggingOut(false);
+    }
   }
+
+  const chatClient = useMemo<ChatCapability>(
+    () => ({
+      chat: async (input: string) => {
+        try {
+          return await client.chat(input);
+        } catch (error) {
+          if (error instanceof BridgeSessionExpiredError) {
+            clearStoredSessionToken();
+            setSessionToken(null);
+            setAuthBootstrapState('ready');
+          }
+
+          throw error;
+        }
+      },
+    }),
+    [client],
+  );
 
   const refreshSelection = useCallback(async () => {
     if (!availability.available) {
@@ -63,7 +100,52 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
   }, [availability.available, wordHostAdapter]);
 
   useEffect(() => {
-    if (!sessionToken) {
+    const storedToken = getStoredSessionToken();
+
+    if (!storedToken) {
+      setSessionToken(null);
+      setAuthBootstrapState('ready');
+      return;
+    }
+
+    let cancelled = false;
+    setAuthBootstrapState('checking');
+
+    void client
+      .getBridgeSession()
+      .then((bridgeSession) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (!bridgeSession.authenticated) {
+          clearStoredSessionToken();
+          setSessionToken(null);
+          return;
+        }
+
+        setSessionToken(storedToken);
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setSessionToken(storedToken);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAuthBootstrapState('ready');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
+
+  useEffect(() => {
+    if (!sessionToken || authBootstrapState !== 'ready') {
       setSelectionText('');
       setSelectionState('idle');
       setDocumentMessage('');
@@ -78,7 +160,7 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
     }
 
     void refreshSelection();
-  }, [availability.available, refreshSelection, sessionToken]);
+  }, [authBootstrapState, availability.available, refreshSelection, sessionToken]);
 
   async function handleInsert(response: string) {
     if (!response.trim() || !availability.available) {
@@ -223,13 +305,24 @@ export function App({ client: providedClient, wordHost: providedWordHost }: AppP
           <div className="word-app-shell__host">Word Add-in</div>
         </div>
         {sessionToken ? (
-          <button type="button" className="word-app-shell__logout" onClick={handleLogout}>
-            Log out
+          <button
+            type="button"
+            className="word-app-shell__logout"
+            onClick={() => void handleLogout()}
+            disabled={loggingOut || authBootstrapState === 'checking'}
+          >
+            {loggingOut ? 'Logging out…' : 'Log out'}
           </button>
         ) : null}
       </div>
-      {sessionToken ? (
-        <ChatShell client={client} title="Hermes Agent for Word" renderResponseActions={renderDocumentActions} />
+      {authBootstrapState === 'checking' ? (
+        <div className="ha-card ha-login-card">
+          <div className="ha-eyebrow">Hermes Agent</div>
+          <h1>Restoring your bridge session</h1>
+          <p className="ha-muted">Checking whether your saved local Hermes bridge session is still valid.</p>
+        </div>
+      ) : sessionToken ? (
+        <ChatShell client={chatClient} title="Hermes Agent for Word" renderResponseActions={renderDocumentActions} />
       ) : (
         <LoginPage client={client} onSuccess={handleLogin} />
       )}

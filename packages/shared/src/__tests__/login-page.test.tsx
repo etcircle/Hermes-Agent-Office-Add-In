@@ -1,8 +1,25 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LoginPage } from '../components/LoginPage';
 
+afterEach(() => {
+  cleanup();
+});
+
 describe('LoginPage', () => {
+  it('shows a host-neutral unlock heading', () => {
+    render(
+      <LoginPage
+        client={{
+          login: vi.fn(),
+        }}
+        onSuccess={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: /unlock hermes add-in/i })).toBeInTheDocument();
+  });
+
   it('submits the passphrase and calls onSuccess with the returned token', async () => {
     const onSuccess = vi.fn();
     const client = {

@@ -10,13 +10,13 @@ export interface ChatResponse {
 
 export interface BridgeSessionStatus {
   authenticated: boolean;
-  expiresAt?: string;
+  expiresAt?: string | null;
 }
 
 export interface SessionCapability {
   login(passphrase: string): Promise<BridgeLoginResult>;
-  getBridgeSession?(): Promise<BridgeSessionStatus>;
-  logout?(): Promise<void>;
+  getBridgeSession(): Promise<BridgeSessionStatus>;
+  logout(): Promise<void>;
 }
 
 export interface ChatCapability {

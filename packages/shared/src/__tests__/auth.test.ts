@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import {
   getStoredSessionToken,
+  hasStoredSessionToken,
   setStoredSessionToken,
   clearStoredSessionToken,
   buildAuthHeaders,
@@ -15,6 +16,7 @@ describe('shared auth storage', () => {
     setStoredSessionToken('abc123');
 
     expect(getStoredSessionToken()).toBe('abc123');
+    expect(hasStoredSessionToken()).toBe(true);
     expect(localStorage.getItem('hermes_agent_office_session_token')).toBe('abc123');
   });
 

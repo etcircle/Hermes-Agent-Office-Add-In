@@ -8,6 +8,10 @@ export function getStoredSessionToken(): string | null {
   }
 }
 
+export function hasStoredSessionToken(): boolean {
+  return Boolean(getStoredSessionToken());
+}
+
 export function setStoredSessionToken(token: string): void {
   try {
     localStorage.setItem(STORAGE_KEY, token);
