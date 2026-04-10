@@ -32,3 +32,47 @@
   background: transparent;
   border: 1px solid #38507d;
 }
+
+.word-app-shell__document-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #22314d;
+  background: rgba(8, 17, 32, 0.55);
+}
+
+.word-app-shell__document-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.word-app-shell__selection-preview {
+  min-height: 64px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #22314d;
+  color: #e5eefb;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.word-app-shell__document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.word-app-shell__secondary-action {
+  background: transparent;
+  border: 1px solid #38507d;
+}
+
+.word-app-shell__document-note {
+  margin: 0;
+}

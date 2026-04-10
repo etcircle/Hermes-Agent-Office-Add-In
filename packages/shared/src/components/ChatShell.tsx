@@ -1,12 +1,13 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, ReactNode, useState } from 'react';
 import type { HermesBackendClient } from '../backend-client';
 
 interface ChatShellProps {
   client: Pick<HermesBackendClient, 'chat'>;
   title: string;
+  renderResponseActions?: (response: string) => ReactNode;
 }
 
-export function ChatShell({ client, title }: ChatShellProps) {
+export function ChatShell({ client, title, renderResponseActions }: ChatShellProps) {
   const [message, setMessage] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,6 +54,7 @@ export function ChatShell({ client, title }: ChatShellProps) {
       <div className="ha-response">
         <div className="ha-response-label">Hermes response</div>
         <pre>{response || 'Your response will appear here.'}</pre>
+        {renderResponseActions ? <div className="ha-response-actions">{renderResponseActions(response)}</div> : null}
       </div>
     </div>
   );

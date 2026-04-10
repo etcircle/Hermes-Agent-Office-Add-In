@@ -115,3 +115,7 @@ textarea {
   font-family: inherit;
   color: #e5eefb;
 }
+
+.ha-response-actions {
+  margin-top: 16px;
+}
